@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import urllib.parse
 import time
+import math
 import config
 import os
 import numpy as np
@@ -28,8 +29,8 @@ POINTS = ['2277372']
 
 class SolarTKMaxPowerCalculator:
     def __init__(self, tilt, orientation, k, c=0.05, t_baseline=25):
-        self.tilt_ = tilt
-        self.orientation = orientation
+        self.tilt_ = math.radians(tilt)
+        self.orientation = math.radians(orientation)
         self.k = k
         self.c = c
         self.t_baseline = t_baseline
@@ -53,13 +54,13 @@ class SolarTKMaxPowerCalculator:
         clearsky_irradiance = df.copy()
         # make the index a column called 'datetime'
         clearsky_irradiance.reset_index(inplace=True)
-        clearsky_irradiance['max_power'] = clearsky_irradiance['DNI'] * self.k * (
+        clearsky_irradiance['max_power'] = abs(clearsky_irradiance['DNI'] * self.k * (
             1 + self.c * (self.t_baseline - 0)) * (
             np.cos(np.radians(90) - pd.to_numeric(sun_position['zenith'])) *
             np.sin(self.tilt_) *
             np.cos(pd.to_numeric(sun_position['azimuth']) - self.orientation) +
             np.sin(np.radians(90) - pd.to_numeric(sun_position['zenith'])) *
-            np.cos(self.tilt_))
+            np.cos(self.tilt_)))
         max_generation = clearsky_irradiance[['datetime', 'max_power']]
         max_generation.columns = ['#time', 'max_generation']
         return max_generation
