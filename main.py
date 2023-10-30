@@ -86,14 +86,14 @@ def load_and_concatenate_csvs(folder):
 
 def download_file(url, destination):
     """Download a file from a URL to a given destination."""
-    # response = requests.get(url, stream=True)
-    # with open(destination, 'wb') as dfile:
-    #     for chunk in response.iter_content(chunk_size=10 * 1024):
-    #         dfile.write(chunk)
-    try:
-        urlretrieve(url, destination)
-    except e:
-        print(url)
+    response = requests.get(url, stream=True)
+    with open(destination, 'wb') as dfile:
+        for chunk in response.iter_content(chunk_size=10 * 1024):
+            dfile.write(chunk)
+    # try:
+    #     urlretrieve(url, destination)
+    # except:
+    #     print(url)
 
 def unzip_file(file_path, destination):
     """Unzip a file to a given destination."""
@@ -116,11 +116,11 @@ def fetch_download_url(attributes, interval, latitude, longitude, year):
         'wkt': 'POINT({:.4f} {:.4f})'.format(longitude, latitude),
         'api_key': config.API_KEY,
         'email': config.EMAIL,
-        'names': year
+        'names': [int(year)]
     }
     headers = {'x-api-key': config.API_KEY}
-    response = requests.post(BASE_URL, params=input_data,headers=headers)
-    response_data = get_response_json_and_handle_errors(response)
+    # response = requests.post(BASE_URL, input_data, headers=headers)
+    response_data = get_response_json_and_handle_errors(requests.post(BASE_URL, input_data, headers=headers))
     return response_data['outputs']['downloadUrl']
 
 
@@ -140,7 +140,7 @@ def main():
 
     for year in years.split(','):
         year.replace(" ", "")
-        download_url = fetch_download_url(data_types, interval, latitude, longitude, years)
+        download_url = fetch_download_url(data_types, interval, latitude, longitude, year)
         zip_file_path = os.path.join(TEMP_DIR, "solar_data_{}.zip".format(year))
         download_file(download_url, zip_file_path)
         unzip_file(zip_file_path, SOLAR_DATA_DIR)
