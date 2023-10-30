@@ -10,6 +10,7 @@ import numpy as np
 from zipfile import ZipFile
 from urllib.request import urlretrieve
 from sunpos import sunpos
+import shutil
 #from solartk.maximum_generation import compute_max_power
 #from solartk.sunpos import get_sun_position
 
@@ -85,10 +86,14 @@ def load_and_concatenate_csvs(folder):
 
 def download_file(url, destination):
     """Download a file from a URL to a given destination."""
-    response = requests.get(url)
-    with open(destination, 'wb') as file:
-        file.write(response.content)
-
+    # response = requests.get(url, stream=True)
+    # with open(destination, 'wb') as dfile:
+    #     for chunk in response.iter_content(chunk_size=10 * 1024):
+    #         dfile.write(chunk)
+    try:
+        urlretrieve(url, destination)
+    except e:
+        print(url)
 
 def unzip_file(file_path, destination):
     """Unzip a file to a given destination."""
@@ -96,11 +101,10 @@ def unzip_file(file_path, destination):
         zip_ref.extractall(destination)
 
 
-def cleanup():
+def cleanup(dir):
     """Delete temporary files after processing."""
-    for filename in os.listdir(SOLAR_DATA_DIR):
-        file_path = os.path.join(SOLAR_DATA_DIR, filename)
-        os.remove(file_path)
+    shutil.rmtree(dir)
+    print("Temporary files have been cleaned up.")
 
 
 #take year as an an additional input
@@ -156,8 +160,8 @@ def main():
     # rename max_generation
     df.rename(columns={'#time': 'datetime'}, inplace=True)
     df.set_index('datetime', inplace=True)
-    df.rename(columns={'max_generation': 'Solar Generation (kWh)'}, inplace=True)
-    # cleanup()
+    df.rename(columns={'max_generation': 'Solar Generation (kW)'}, inplace=True)
+    cleanup(TEMP_DIR)
     # dump df to csv
     df.to_csv('{}_{}_solar_generation.csv'.format(latitude, longitude), index=True)
 

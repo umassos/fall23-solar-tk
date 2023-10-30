@@ -1,4 +1,4 @@
-datetime,GHI,DNI,Solar Generation (kWh)
+datetime,GHI,DNI,Solar Generation (kW)
 2020-01-01 00:00:00,0,0,0.0
 2020-01-01 00:15:00,0,0,0.0
 2020-01-01 00:30:00,0,0,0.0
