@@ -4,6 +4,7 @@ import urllib.parse
 import time
 import math
 import config
+import wget
 import os
 import numpy as np
 # Importing Solar-TK functions and functions I used for CSV Processing
@@ -26,6 +27,11 @@ if not os.path.exists(SOLAR_DATA_DIR):
 
 BASE_URL = "https://developer.nrel.gov/api/nsrdb/v2/solar/psm3-5min-download.json?"
 POINTS = ['2277372']
+
+PANEL_TILT = 34.5 # degrees
+dc_system_size = 25.0 # kW
+INVERTER_EFFICIENCY = 0.95
+SYSTEM_LOSS = 0.14
 
 
 class SolarTKMaxPowerCalculator:
@@ -62,7 +68,9 @@ class SolarTKMaxPowerCalculator:
             np.cos(pd.to_numeric(sun_position['azimuth']) - self.orientation) +
             np.sin(np.radians(90) - pd.to_numeric(sun_position['zenith'])) *
             np.cos(self.tilt_)))
-        max_generation = clearsky_irradiance[['datetime', 'max_power']]
+        
+        clearsky_irradiance['Solar Generation (kW)'] = dc_system_size * (clearsky_irradiance['max_power'] / 1000) * (1-SYSTEM_LOSS) * INVERTER_EFFICIENCY
+        max_generation = clearsky_irradiance[['datetime', 'Solar Generation (kW)']]
         max_generation.columns = ['#time', 'max_generation']
         return max_generation
     
@@ -80,16 +88,19 @@ def load_and_concatenate_csvs(folder):
                 df = pd.read_csv(csv_path, skiprows=skip)
                 # append the dataframe to df_list
                 df_list.append(df)
+    # sort the df_list by the 'Year' column
+    df_list.sort(key=lambda x: x['Year'][0])
     df = pd.concat(df_list, ignore_index=True)
     return df
 
 
 def download_file(url, destination):
     """Download a file from a URL to a given destination."""
-    response = requests.get(url, stream=True)
-    with open(destination, 'wb') as dfile:
-        for chunk in response.iter_content(chunk_size=10 * 1024):
-            dfile.write(chunk)
+    # response = requests.get(url, stream=True)
+    # with open(destination, 'wb') as dfile:
+    #     for chunk in response.iter_content(chunk_size=10 * 1024):
+    #         dfile.write(chunk)
+    wget.download(url, out=destination)
     # try:
     #     urlretrieve(url, destination)
     # except:
