@@ -52,6 +52,8 @@ def main():
         'api_key': config.API_KEY,
         'email': config.EMAIL,
     }
+    
+    all_data = [ ]
 
     for year in years.split(','):
         print(f"Processing year: {year}")
@@ -92,8 +94,25 @@ def main():
                 time.sleep(1)
             print(f'Processed')
 
+        combined_data = pd.concat(all_data, ignore_index=True)  
+        process_data(combined_data)
+        
         cleanup()
 
+def process_data(data):
+
+    # Convert string timestamps to datetime objects for easier grouping
+    data['time'] = pd.to_datetime(data['time'])
+    
+    # Group by month, day, and time
+    grouped = data.groupby([data['time'].dt.month, data['time'].dt.day, data['time'].dt.hour, data['time'].dt.minute])
+    
+    # Calculate average and standard deviation for each group
+    summary = grouped.agg(['mean', 'std'])
+    
+    # Save summary to CSV
+    summary.to_csv('forecasted_generation_summary.csv')
+    print("Saved the forecasted generation summary.")
 
 def get_response_json_and_handle_errors(response: requests.Response) -> dict:
     if response.status_code != 200:
